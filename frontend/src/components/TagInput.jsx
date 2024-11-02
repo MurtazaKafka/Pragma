@@ -10,6 +10,9 @@ function TagInput() {
                 placeholder="Search Organisations (comma-separated)"
                 className="flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
                 aria-label="Enter Organisations"
+                style={{
+                    resize: 'none',
+                }}
             />
         </form>
     );

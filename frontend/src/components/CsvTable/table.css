@@ -1,0 +1,85 @@
+* {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+  }
+  table{
+    background: #FFF;
+    border-spacing: 0;
+    border-radius: 4px;
+    border: 1px solid #B9B9B9;
+  }
+  
+  th, td {
+    min-width: 100px;
+    padding: 8px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  }
+  
+  th {
+    border-left: 1px solid #B9B9B9;
+    background: rgba(0, 0, 0, 0.06);
+  }
+  
+  td {
+    border-top: 1px solid #B9B9B9;
+    border-left: 1px solid #B9B9B9;
+    background: rgba(255, 255, 255, 0.00);
+  }
+  
+  #data-wrapper{
+    display: flex;
+    flex-direction: column;
+    margin: 16px;
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  #csv-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  #data-title {
+  
+  }
+  
+  #csv-wrapper {
+    overflow: auto;
+  }
+  
+  /* button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+  } */
+  
+  i{
+    color: black;
+  }
+  
+  i:hover {
+    color: #4CAF50;
+  }
+  
+  i:active {
+    transform: scale(0.9);
+  }
