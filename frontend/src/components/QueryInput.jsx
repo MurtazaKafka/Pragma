@@ -4,15 +4,21 @@ import Modal from "./Modal/Modal"
 
 function QueryInput() {
     const [query, setQuery] = useState('');
+    const [organisations, setOrganisations] = useState('');
 
-    const handleChange = (e) => {
+    const handleQueryChange = (e) => {
         setQuery(e.target.value);
     };
+
+    const handleOrganisationsChange = (e) => {
+        setOrganisations(e.target.value);
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault();
         // Add your submit logic here
         console.log('Submitted:', query);
+        console.log('Submitted:', organisations);
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,11 +27,11 @@ function QueryInput() {
     const closeModal = () => setIsModalOpen(false);
 
     return (
-        <div>
-            <form
-                className="flex flex-wrap gap-5 justify-center items-center px-3.5 text-lg text-black rounded-lg"
-                onSubmit={handleSubmit}>
-                <label htmlFor="queryInput" className="sr-only">Enter Query</label>
+        <>
+    <form
+        className="flex flex-wrap gap-5 justify-center items-center px-3.5 text-lg text-black rounded-lg w-4/5 md:w-2/3"
+        onSubmit={handleSubmit}>
+        <label htmlFor="queryInput" className="sr-only">Enter Query</label>
 
                 <div className="relative w-full">
                     {query && (
@@ -54,9 +60,20 @@ function QueryInput() {
                     rows={3}
                 />
 
-            </form>
-            <Modal isOpen={isModalOpen} onClose={closeModal}></Modal>
-        </div>
+    </form>
+    <form
+        className="flex flex-wrap gap-5 justify-center items-center px-3.5 text-md text-black rounded-lg w-4/5 md:w-2/3 ">
+        <label htmlFor="queryInput" className="sr-only">Enter Query</label>
+        <textarea
+            id="queryInput"
+            type="text"
+            onChange={handleOrganisationsChange}
+            placeholder="Search Organisations (comma-separated)"
+            className="flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
+            aria-label="Enter Organisations"
+        />
+    </form>
+        </>
     );
 }
 
