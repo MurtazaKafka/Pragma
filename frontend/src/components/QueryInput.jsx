@@ -42,7 +42,7 @@ function QueryInput({ onSubmit }) {
                 <div className="space-y-2">
                     <label 
                         htmlFor="queryInput" 
-                        className="block text-sm font-medium text-gray-700"
+                        className="block text-lg font-bold text-gray-700"
                     >
                         Questions
                     </label>
@@ -51,7 +51,7 @@ function QueryInput({ onSubmit }) {
                             id="queryInput"
                             value={query}
                             onChange={handleQueryChange}
-                            placeholder="What would you like to know? (comma-separated questions)"
+                            placeholder="What would you like to know? (newline-separated questions)"
                             className="w-full min-h-[120px] p-4 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ease-in-out resize-y"
                             rows={3}
                         />
@@ -61,7 +61,7 @@ function QueryInput({ onSubmit }) {
                 <div className="space-y-2">
                     <label 
                         htmlFor="organisationsInput" 
-                        className="block text-sm font-medium text-gray-700"
+                        className="block text-lg font-bold text-gray-700"
                     >
                         Organizations
                     </label>
@@ -80,9 +80,9 @@ function QueryInput({ onSubmit }) {
                 <div className="flex justify-end mt-4">
                     <button
                         type="submit"
-                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                        className="inline-flex items-center px-3 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                     >
-                        <span className="mr-2">Submit</span>
+                        {/* <span className="mr-2">Submit</span> */}
                         <Send className="w-4 h-4" />
                     </button>
                 </div>

@@ -24,7 +24,7 @@ const Landing = () => {
                             <CSVViewer initialData={queryData} />
                         </div>
                     )}
-                    <div className="mt-8">
+                    <div className="mt-8 flex justify-center">
                         <RecentChats />
                     </div>
                 </div>
