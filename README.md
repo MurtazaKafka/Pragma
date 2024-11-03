@@ -1,4 +1,4 @@
-# AutoData
+# Pragma
 
 ## Inspiration
 In today’s data collection standards, research organizations frequently rely on manual data collection methods, often hiring multiple data collectors to access reliable and scalable data. This approach is both financially burdensome and time-consuming, significantly slowing down the research process. Team Pragma was inspired to innovate in this space by creating a streamlined, automated data collection tool that not only reduces costs and time but also enhances data reliability, particularly for fields like finance and education.
