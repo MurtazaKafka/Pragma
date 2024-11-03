@@ -1,8 +1,7 @@
-import React, {useState} from 'react';
-import UpArrowIcon from "../common/UpArrowIcon";
-import Modal from "./Modal/Modal"
+import React, { useState } from 'react';
+import { Send } from 'lucide-react';
 
-function QueryInput() {
+function QueryInput({ onSubmit }) {
     const [query, setQuery] = useState('');
     const [organisations, setOrganisations] = useState('');
 
@@ -12,13 +11,24 @@ function QueryInput() {
 
     const handleOrganisationsChange = (e) => {
         setOrganisations(e.target.value);
-    }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Add your submit logic here
-        console.log('Submitted:', query);
-        console.log('Submitted:', organisations);
+        const organisationsList = organisations
+            .split(',')
+            .map(org => org.trim())
+            .filter(org => org.length > 0);
+            
+        const questions = query
+            .split(',')
+            .map(q => q.trim())
+            .filter(q => q.length > 0);
+            
+        onSubmit({
+            questions: questions,
+            organizations: organisationsList
+        });
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,61 +37,58 @@ function QueryInput() {
     const closeModal = () => setIsModalOpen(false);
 
     return (
-        <>
-    <form
-        className="flex flex-wrap gap-5 justify-center items-center px-3.5 text-lg text-black rounded-lg w-4/5 md:w-1/2"
-        onSubmit={handleSubmit}>
-        <label htmlFor="queryInput" className="sr-only">Enter Query</label>
-                <div className="relative w-full">
-                    {query && (
-                        <button
-                            type="submit"
-                            className="absolute top-7 -right-14 bg-transparent text-white rounded px-3 py-1 transition-opacity duration-200"
-                            onClick={openModal}
-                        >
-                            <UpArrowIcon />
-                        </button>
-                    )}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                    <label 
+                        htmlFor="queryInput" 
+                        className="block text-sm font-medium text-gray-700"
+                    >
+                        Questions
+                    </label>
+                    <div className="relative">
+                        <textarea
+                            id="queryInput"
+                            value={query}
+                            onChange={handleQueryChange}
+                            placeholder="What would you like to know? (comma-separated questions)"
+                            className="w-full min-h-[120px] p-4 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ease-in-out resize-y"
+                            rows={3}
+                        />
+                    </div>
                 </div>
-                <textarea
-                    id="queryInput"
-                    value={query}
-                    style={{
-                        maxHeight: '500px',  // Set max height
-                        overflowY: query ? 'auto' : 'hidden',  // Show scrollbar only when there's text
-                        //height: 'auto',  // Allow the height to be dynamic
-                        height: '10rem',
-                        resize: 'none',
-                        borderRadius: "1rem",
-                    }}
-                    onChange={handleQueryChange}
-                    placeholder="What would you like to know? Type each query on a new line."
-                    className="text-base font-bodoni placeholder-heliotrope-300 text-heliotrope-600 flex-grow p-2 pl-3 pr-3 h-fit border border-gray-300
-                    rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
-                    aria-label="Enter Query"
-                    rows={3}
-                />
 
-    </form>
-    <form
-        className="flex flex-wrap gap-5 justify-center items-center px-3.5 text-md text-black rounded-lg w-4/5 md:w-1/2 ">
-        <label htmlFor="queryInput" className="sr-only">Enter Query</label>
-        <textarea
-            id="queryInput"
-            type="text"
-            onChange={handleOrganisationsChange}
-            placeholder="Enter organizations, separated by commas."
-            className="text-base font-bodoni placeholder-font-bodoni placeholder-heliotrope-300 text-heliotrope-600 pl-3 pr-3 flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
-            aria-label="Enter Organisations"
-            style={{
-                resize: 'none',
-                borderRadius: '1rem',
-            }}
-        />
-    </form>
-    <Modal isOpen={isModalOpen} onClose={closeModal}></Modal>
-        </>
+                <div className="space-y-2">
+                    <label 
+                        htmlFor="organisationsInput" 
+                        className="block text-sm font-medium text-gray-700"
+                    >
+                        Organizations
+                    </label>
+                    <div className="relative">
+                        <textarea
+                            id="organisationsInput"
+                            value={organisations}
+                            onChange={handleOrganisationsChange}
+                            placeholder="Enter organizations (comma-separated)"
+                            className="w-full p-4 text-gray-900 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ease-in-out resize-y"
+                            rows={2}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex justify-end mt-4">
+                    <button
+                        type="submit"
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                    >
+                        <span className="mr-2">Submit</span>
+                        <Send className="w-4 h-4" />
+                    </button>
+                </div>
+            </form>
+        </div>
     );
-}
+};
 
 export default QueryInput;
