@@ -10,7 +10,7 @@ function RecentChats() {
 
     return (
         <div className="w-4/5 md:w-2/3 px-3.5 flex-col flex-wrap justify-center items-center mx-6 mb-64">
-            <h2 className="mt-6 mb-4 text-2xl text-black">
+            <h2 className="mt-6 mb-4 text-2xl text-heliotrope-700">
                 Recent Chats
             </h2>
             <div className="flex gap-5 max-md:flex-col text-md">
