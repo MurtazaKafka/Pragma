@@ -1,2 +1,10 @@
 uvicorn
 fastapi
+aiohttp
+bs4
+fake_useragent
+pandas
+openai
+tenacity
+pinecone
+pydantic
