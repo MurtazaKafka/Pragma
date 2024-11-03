@@ -80,7 +80,7 @@ function QueryInput({ onSubmit }) {
                 <div className="flex justify-end mt-4">
                     <button
                         type="submit"
-                        className="inline-flex items-center px-3 py-3 bg-heliotrope-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+                        className="inline-flex items-center px-3 py-3 bg-heliotrope-600 text-white font-medium rounded-lg hover:bg-heliotrope-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
                     >
                         {/* <span className="mr-2">Submit</span> */}
                         <Send className="w-4 h-4" />
