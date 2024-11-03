@@ -8,12 +8,12 @@ const Modal = ({ isOpen, onClose, children }) => {
   
     return (
        <div className="modal-overlay" onClick={onClose}>
-         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+         <div className="modal-content bg-heliotrope-50" onClick={(e) => e.stopPropagation()}>
             <button className="close-button" onClick={onClose}>
-              <i className="fa fa-times"></i>
+              <i className="text-2xl fa fa-times text-heliotrope-700 transition duration-200 hover:scale-110 hover:outline-none focus:outline-none"></i>
             </button>
             <button className="download-button" onClick={handleDownload}>
-              <i className="fa fa-download"></i>
+              <i className="text-2xl fa fa-download text-heliotrope-700 transition duration-200 hover:scale-110 hover:outline-none focus:outline-none"></i>  
             </button>
            <CsvTable/>
            {children}
