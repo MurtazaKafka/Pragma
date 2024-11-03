@@ -1,3 +1,4 @@
+from datetime import datetime
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
@@ -8,6 +9,16 @@ from urllib.parse import quote_plus
 import re
 from fake_useragent import UserAgent
 from schemas import QueryRequest, SearchResult
+import ssl
+from enum import Enum
+
+class ContentType(str, Enum):
+    FINANCIAL_REPORT = 'financial_report'
+    NEWS_ARTICLE = 'news_article'
+    PRESS_RELEASE = 'press_release'
+    REGULATORY_FILING = 'regulatory_filing'
+    COMPANY_WEBSITE = 'company_website'
+    OTHER = 'other'
 
 @dataclass
 class ScrapedContent:
@@ -28,7 +39,7 @@ class WebScraper:
         self.concurrent_requests = 3  # Limit concurrent requests to avoid rate limiting
         
         # Rate limiting parameters
-        self.request_delay = 2  # Delay between requests in seconds
+        self.request_delay = 3  # Delay between requests in seconds
         self.last_request_time = 0
         
     async def __aenter__(self):
@@ -42,17 +53,48 @@ class WebScraper:
             await self.session.close()
 
     def _construct_search_query(self, question: str, organization: str) -> str:
-        """Construct an effective search query combining question and organization"""
-        # Remove special characters and normalize spaces
-        cleaned_question = re.sub(r'[^\w\s]', ' ', question)
-        cleaned_org = re.sub(r'[^\w\s]', ' ', organization)
+        """Construct a more targeted search query"""
+        # Clean and prepare question
+        cleaned_question = re.sub(r'[^\w\s]', ' ', question).lower()
         
-        # Combine terms and encode for URL
-        query = f"{cleaned_question} {cleaned_org} financial data report analysis"
+        # Add specific keywords based on question type
+        keywords = []
+        if 'revenue' in cleaned_question:
+            keywords.extend(['quarterly results', 'earnings report', 'financial results'])
+        elif 'profit' in cleaned_question or 'margin' in cleaned_question:
+            keywords.extend(['profit margin', 'earnings', 'financial performance'])
+        elif 'growth' in cleaned_question:
+            keywords.extend(['year over year', 'YoY', 'growth rate'])
+            
+        # Add time context
+        keywords.append('2023 OR 2024')
+        
+        # Combine terms with organization and encode
+        query = f"{organization} {' '.join(keywords)} {question} site:(.com OR .gov)"
         return quote_plus(query)
+    
+    def _determine_content_type(self, url: str) -> ContentType:
+        """Determine content type based on URL patterns"""
+        url_lower = url.lower()
+        
+        if any(x in url_lower for x in ['sec.gov', 'edgar']):
+            return ContentType.REGULATORY_FILING
+        elif any(x in url_lower for x in ['investor', 'earnings', 'financial-results']):
+            return ContentType.FINANCIAL_REPORT
+        elif any(x in url_lower for x in ['press', 'news', 'pr-']):
+            return ContentType.PRESS_RELEASE
+        elif any(x in url_lower for x in ['cnbc.com', 'reuters.com', 'bloomberg.com']):
+            return ContentType.NEWS_ARTICLE
+        elif any(x in url_lower for x in ['apple.com', 'microsoft.com']):
+            return ContentType.COMPANY_WEBSITE
+        else:
+            return ContentType.OTHER
 
     async def _fetch_url(self, url: str) -> Optional[str]:
-        """Fetch content from a URL with error handling and rate limiting"""
+        """Enhanced fetch with retry logic"""
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+            
         headers = {
             'User-Agent': self.ua.random,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -60,73 +102,124 @@ class WebScraper:
             'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
         }
         
-        try:
-            # Implement rate limiting
-            current_time = asyncio.get_event_loop().time()
-            time_since_last = current_time - self.last_request_time
-            if time_since_last < self.request_delay:
-                await asyncio.sleep(self.request_delay - time_since_last)
-            
-            async with self.session.get(url, headers=headers, timeout=30) as response:
-                self.last_request_time = asyncio.get_event_loop().time()
-                if response.status == 200:
-                    return await response.text()
-                else:
-                    self.logger.warning(f"Failed to fetch {url}, status: {response.status}")
-                    return None
-                    
-        except Exception as e:
-            self.logger.error(f"Error fetching {url}: {str(e)}")
+        # Sites that typically block scraping
+        blocked_domains = ['bloomberg.com', 'ft.com', 'wsj.com']
+        if any(domain in url for domain in blocked_domains):
             return None
+            
+        retries = 3
+        for attempt in range(retries):
+            try:
+                # Implement rate limiting
+                current_time = asyncio.get_event_loop().time()
+                time_since_last = current_time - self.last_request_time
+                if time_since_last < self.request_delay:
+                    await asyncio.sleep(self.request_delay - time_since_last)
+                
+                timeout = aiohttp.ClientTimeout(total=20)
+                async with self.session.get(
+                    url, 
+                    headers=headers, 
+                    timeout=timeout,
+                    ssl=False,
+                    allow_redirects=True
+                ) as response:
+                    self.last_request_time = asyncio.get_event_loop().time()
+                    if response.status == 200:
+                        return await response.text()
+                    elif response.status == 403 or response.status == 429:
+                        # If rate limited, wait longer before retry
+                        await asyncio.sleep(5 * (attempt + 1))
+                        continue
+                    else:
+                        self.logger.warning(f"Failed to fetch {url}, status: {response.status}")
+                        return None
+                        
+            except Exception as e:
+                self.logger.error(f"Attempt {attempt + 1} failed for {url}: {str(e)}")
+                if attempt < retries - 1:
+                    await asyncio.sleep(2 * (attempt + 1))
+                continue
+                
+        return None
 
     def _extract_search_results(self, html_content: str) -> List[str]:
-        """Extract URLs from Google search results"""
+        """Extract URLs with better filtering"""
         soup = BeautifulSoup(html_content, 'html.parser')
         urls = []
         
         # Find all search result divs
         for result in soup.find_all('div', class_='g'):
-            link = result.find('a', href=True)
-            if link and 'href' in link.attrs:
+            try:
+                # Get the link
+                link = result.find('a', href=True)
+                if not link or not link['href'].startswith('http'):
+                    continue
+                    
                 url = link['href']
-                if url.startswith('http') and not any(x in url for x in ['google.com', 'youtube.com']):
+                
+                # Skip unwanted domains
+                skip_domains = ['google.com', 'youtube.com', 'facebook.com', 'twitter.com']
+                if any(domain in url for domain in skip_domains):
+                    continue
+                    
+                # Prioritize financial and news websites
+                priority_domains = ['ir.', 'investors.', 'reuters.com', 'seekingalpha.com', 'finance.yahoo.com']
+                if any(domain in url for domain in priority_domains):
+                    urls.insert(0, url)
+                else:
                     urls.append(url)
                     
+            except Exception as e:
+                self.logger.error(f"Error extracting URL: {str(e)}")
+                continue
+                
         return urls[:self.max_results_per_query]
 
     def _extract_content(self, html_content: str, url: str) -> Optional[ScrapedContent]:
-        """Extract relevant content from a webpage"""
+        """Enhanced content extraction"""
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             
             # Remove unwanted elements
-            for element in soup.find_all(['script', 'style', 'nav', 'footer', 'header']):
+            for element in soup.find_all(['script', 'style', 'nav', 'footer', 'header', 'aside']):
                 element.decompose()
+                
+            # First try to find article or main content
+            main_content = soup.find('article') or soup.find('main')
+            if main_content:
+                paragraphs = main_content.find_all(['p', 'h1', 'h2', 'h3', 'table'])
+            else:
+                paragraphs = soup.find_all(['p', 'h1', 'h2', 'h3', 'table'])
             
             # Extract title
             title = soup.title.string if soup.title else ''
             
-            # Extract main content
-            main_content = []
-            for paragraph in soup.find_all(['p', 'article', 'section']):
-                text = paragraph.get_text(strip=True)
-                if len(text) > 50:  # Filter out short snippets
-                    main_content.append(text)
+            # Process paragraphs
+            content_parts = []
+            for p in paragraphs:
+                text = p.get_text(strip=True)
+                # Keep only substantial paragraphs
+                if len(text) > 30 and not any(skip in text.lower() for skip in ['cookie', 'subscribe', 'privacy policy']):
+                    content_parts.append(text)
             
-            if not main_content:
+            if not content_parts:
                 return None
             
-            # Combine content and create snippet
-            content = ' '.join(main_content)
-            snippet = ' '.join(main_content[:2])  # First two substantial paragraphs
+            # Join content with proper spacing
+            content = ' '.join(content_parts)
+            
+            # Create a focused snippet
+            snippet = ' '.join(content_parts[:3])  # First three substantial paragraphs
             
             return ScrapedContent(
                 url=url,
                 title=title,
-                content=content,
-                snippet=snippet
+                content=content[:8000],  # Limit content length
+                snippet=snippet[:500]  # Limit snippet length
             )
             
         except Exception as e:
@@ -134,79 +227,92 @@ class WebScraper:
             return None
 
     async def _scrape_single_query(self, question: str, organization: str) -> List[SearchResult]:
-        """Scrape results for a single question-organization pair"""
-        query = self._construct_search_query(question, organization)
-        search_url = f"{self.search_base_url}?q={query}"
-        
-        # Fetch search results
-        search_html = await self._fetch_url(search_url)
-        if not search_html:
+        """Scrape results for a single question-organization pair with enhanced error handling"""
+        try:
+            query = self._construct_search_query(question, organization)
+            search_url = f"{self.search_base_url}?q={query}"
+            
+            # Fetch search results
+            search_html = await self._fetch_url(search_url)
+            if not search_html:
+                self.logger.warning(f"No search results found for query: {query}")
+                return []
+            
+            urls = self._extract_search_results(search_html)
+            results = []
+            
+            # Process URLs with enhanced error handling
+            async def process_url(url):
+                try:
+                    html_content = await self._fetch_url(url)
+                    if html_content:
+                        content = self._extract_content(html_content, url)
+                        if content:
+                            content_type = self._determine_content_type(url)
+                            return SearchResult(
+                                question=question,
+                                organization=organization,
+                                content=content.content,
+                                url=url,
+                                timestamp=datetime.now(),
+                                content_type=content_type,  # Using proper enum value
+                                relevance_score=0.5
+                            )
+                except Exception as e:
+                    self.logger.error(f"Error processing URL {url}: {str(e)}")
+                return None
+            
+            # Process URLs with concurrent limiting
+            tasks = []
+            for url in urls:
+                if len(tasks) >= self.concurrent_requests:
+                    # Wait for some tasks to complete before adding more
+                    completed = await asyncio.gather(*tasks, return_exceptions=True)
+                    results.extend([r for r in completed if r and not isinstance(r, Exception)])
+                    tasks = []
+                tasks.append(asyncio.create_task(process_url(url)))
+            
+            if tasks:
+                completed = await asyncio.gather(*tasks, return_exceptions=True)
+                results.extend([r for r in completed if r and not isinstance(r, Exception)])
+            
+            return results
+            
+        except Exception as e:
+            self.logger.error(f"Error in _scrape_single_query: {str(e)}")
             return []
-        
-        urls = self._extract_search_results(search_html)
-        results = []
-        
-        # Fetch and process each URL
-        async def process_url(url):
-            html_content = await self._fetch_url(url)
-            if html_content:
-                content = self._extract_content(html_content, url)
-                if content:
-                    return SearchResult(
-                        question=question,
-                        organization=organization,
-                        content=content.content,
-                        url=url
-                    )
-            return None
-        
-        # Process URLs concurrently with rate limiting
-        tasks = []
-        for url in urls:
-            task = asyncio.create_task(process_url(url))
-            tasks.append(task)
-            if len(tasks) >= self.concurrent_requests:
-                completed = await asyncio.gather(*tasks)
-                results.extend([r for r in completed if r])
-                tasks = []
-                
-        if tasks:
-            completed = await asyncio.gather(*tasks)
-            results.extend([r for r in completed if r])
-        
-        return results
 
     async def scrape_matrix(self, questions: List[str], organizations: List[str]) -> List[SearchResult]:
-        """Scrape data for all question-organization pairs"""
-        async with self:  # Use context manager for session handling
+        """Enhanced matrix scraping with proper session handling"""
+        try:
+            self.session = aiohttp.ClientSession()  # Create session
             all_results = []
             
-            # Create tasks for each question-organization pair
-            tasks = []
-            for question in questions:
-                for org in organizations:
-                    task = asyncio.create_task(
-                        self._scrape_single_query(question, org)
-                    )
-                    tasks.append(task)
-            
-            # Execute all tasks and gather results
-            results_lists = await asyncio.gather(*tasks)
-            for result_list in results_lists:
-                all_results.extend(result_list)
+            # Process in batches to avoid overwhelming resources
+            batch_size = 4  # Adjust based on your needs
+            for i in range(0, len(questions), batch_size):
+                question_batch = questions[i:i + batch_size]
+                for j in range(0, len(organizations), batch_size):
+                    org_batch = organizations[j:j + batch_size]
+                    
+                    tasks = []
+                    for question in question_batch:
+                        for org in org_batch:
+                            tasks.append(self._scrape_single_query(question, org))
+                    
+                    batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+                    for results in batch_results:
+                        if isinstance(results, list):
+                            all_results.extend(results)
+                    
+                    # Add delay between batches
+                    await asyncio.sleep(self.request_delay)
             
             return all_results
-
-# # Example usage in /endpoints.py
-# async def process_queries(request: QueryRequest):
-#     scraper = WebScraper()
-#     search_results = await scraper.scrape_matrix(
-#         questions=request.questions,
-#         organizations=request.organizations
-#     )
-    
-#     # Process results with RAG...
-#     return search_results
+            
+        finally:
+            if self.session:
+                await self.session.close()
 
 
 

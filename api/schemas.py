@@ -6,26 +6,21 @@ from datetime import datetime
 from enum import Enum
 
 class ContentType(str, Enum):
-    FINANCIAL_REPORT = "financial_report"
-    NEWS_ARTICLE = "news_article"
-    PRESS_RELEASE = "press_release"
-    REGULATORY_FILING = "regulatory_filing"
-    COMPANY_WEBSITE = "company_website"
-    OTHER = "other"
+    FINANCIAL_REPORT = 'financial_report'
+    NEWS_ARTICLE = 'news_article'
+    PRESS_RELEASE = 'press_release'
+    REGULATORY_FILING = 'regulatory_filing'
+    COMPANY_WEBSITE = 'company_website'
+    OTHER = 'other'
 
 class SearchResult(BaseModel):
     question: str
     organization: str
     content: str
     url: str
-    content_type: Optional[ContentType] = ContentType.OTHER
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    relevance_score: Optional[float] = None
-
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    content_type: ContentType = ContentType.OTHER
+    timestamp: datetime = datetime.now()
+    relevance_score: float = 0.5
 
 class QueryRequest(BaseModel):
     questions: List[str] = Field(..., min_items=1, max_items=10)

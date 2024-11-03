@@ -1,85 +1,143 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 import os
 from dataclasses import dataclass
 import json
 import pandas as pd
 from openai import OpenAI
-from pinecone import Pinecone, Index
-from dotenv import load_dotenv
+from pinecone import Pinecone
+from datetime import datetime
+from tenacity import retry, stop_after_attempt, wait_exponential
+import logging
+from config import Config
+
+logger = logging.getLogger(__name__)
 
 @dataclass
-class SearchResult:
+class EnhancedSearchResult:
     question: str
     organization: str
     content: str
     url: str
+    timestamp: datetime = datetime.now()
+    content_type: str = "webpage"
+    relevance_score: float = 0.5
 
-@dataclass
-class ProcessedResult:
-    question: str
-    organization: str
-    answer: Dict
-
-class RAGProcessor:
+class EnhancedRAGProcessor:
     def __init__(self):
-        load_dotenv()
-        
-        # Validate environment variables
-        required_vars = ["OPENAI_API_KEY", "PINECONE_API_KEY", "PINECONE_ENV", "PINECONE_INDEX_NAME"]
-        missing_vars = [var for var in required_vars if not os.getenv(var)]
-        if missing_vars:
-            raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
-        
-        # Initialize OpenAI client
-        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        
-        # Initialize Pinecone with environment
-        self.pc = Pinecone(
-            api_key=os.getenv("PINECONE_API_KEY"),
-            environment=os.getenv("PINECONE_ENV")
-        )
-        
-        # Get or create index
-        index_name = os.getenv("PINECONE_INDEX_NAME")
         try:
-            self.index = self.pc.Index(index_name)
-        except Exception as e:
-            # If index doesn't exist, create it
-            self.pc.create_index(
-                name=index_name,
-                dimension=1536,  # dimension for text-embedding-ada-002
-                metric="cosine"
+            # Load and validate all required API keys
+            api_keys = Config.get_api_keys()
+            
+            # Initialize OpenAI client
+            self.openai_client = OpenAI(
+                api_key=api_keys['openai_api_key']
             )
-            self.index = self.pc.Index(index_name)
+            
+            # Initialize Pinecone
+            self.pc = Pinecone(
+                api_key=api_keys['pinecone_api_key'],
+                environment=api_keys['pinecone_env']
+            )
+            
+            # Get or create Pinecone index
+            index_name = api_keys['pinecone_index_name']
+            try:
+                self.index = self.pc.Index(index_name)
+            except Exception as e:
+                logger.warning(f"Error accessing index: {str(e)}")
+                logger.info("Attempting to create new index...")
+                self.pc.create_index(
+                    name=index_name,
+                    dimension=1536,  # dimension for text-embedding-ada-002
+                    metric="cosine"
+                )
+                self.index = self.pc.Index(index_name)
+                
+        except Exception as e:
+            logger.error(f"Initialization error: {str(e)}")
+            raise
 
-    def vectorize_content(self, search_results: List[SearchResult]) -> List[Dict]:
-        """Convert scraped content into embeddings and store in vector format"""
+        # Define enhanced prompts
+        self.ANALYSIS_PROMPT_TEMPLATE = """
+        Analyze the following sources to answer the question: "{question}" about {organization}.
+        
+        Sources:
+        {sources}
+        
+        Focus on extracting:
+        1. Specific numerical data and metrics
+        2. Time periods and trends
+        3. Comparative analysis
+        4. Source reliability
+        
+        Requirements:
+        - Provide detailed quantitative analysis where available
+        - Include specific dates and time periods
+        - Compare against industry benchmarks if mentioned
+        - Cite specific sources for each key finding
+        
+        Respond in the following JSON format:
+        {{
+            "answer": "Comprehensive answer with specific numbers and dates",
+            "key_findings": [
+                "Specific finding 1 with numbers and dates",
+                "Specific finding 2 with numbers and dates",
+                ...
+            ],
+            "metrics": {{
+                "value": numeric_value,
+                "unit": "percentage/currency/etc",
+                "time_period": "Q1 2024/FY2023/etc",
+                "trend": "increasing/decreasing/stable"
+            }},
+            "confidence_score": 0.0 to 1.0,
+            "reliability_assessment": {{
+                "source_quality": 0.0 to 1.0,
+                "data_recency": "date of most recent data",
+                "data_completeness": 0.0 to 1.0
+            }},
+            "sources": ["url1", "url2", ...]
+        }}
+        """
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    async def _get_embedding(self, text: str) -> List[float]:
+        """Get embedding with retry logic"""
+        response = self.openai_client.embeddings.create(
+            input=text,
+            model="text-embedding-ada-002"
+        )
+        return response.data[0].embedding
+
+    async def vectorize_content(self, search_results: List[EnhancedSearchResult]) -> List[Dict]:
+        """Enhanced vectorization with metadata"""
         vectors = []
         
         for result in search_results:
             try:
-                # Ensure content is not too long for OpenAI's token limit
-                content = result.content[:8000]  # Truncate to avoid token limits
+                # Prepare content with metadata
+                content_with_metadata = f"""
+                Organization: {result.organization}
+                Question Context: {result.question}
+                Content Type: {result.content_type}
+                Timestamp: {result.timestamp}
+                Content: {result.content[:8000]}
+                """
                 
-                # Generate embedding using OpenAI
-                response = self.openai_client.embeddings.create(
-                    input=content,
-                    model="text-embedding-ada-002"
-                )
-                embedding = response.data[0].embedding
+                embedding = await self._get_embedding(content_with_metadata)
                 
-                # Convert URL to string if it's a Pydantic URL object
-                url_str = str(result.url)
+                # Create unique ID
+                unique_id = f"{hash(result.question + result.organization + str(result.url))}"
                 
-                # Create a unique ID that's consistent and URL-safe
-                unique_id = f"{hash(result.question + result.organization + url_str)}"
-                
-                # Create metadata for the vector
+                # Enhanced metadata
                 metadata = {
                     "question": result.question,
                     "organization": result.organization,
-                    "content": content,
-                    "url": url_str
+                    "content": result.content[:8000],
+                    "url": str(result.url),
+                    "timestamp": result.timestamp.isoformat(),
+                    "content_type": result.content_type or 'webpage',
+                    "relevance_score": float(result.relevance_score or 0.5)  # Ensure float and non-null
                 }
                 
                 vectors.append({
@@ -87,134 +145,168 @@ class RAGProcessor:
                     "values": embedding,
                     "metadata": metadata
                 })
+                
             except Exception as e:
-                print(f"Error vectorizing content for {url_str}: {str(e)}")
+                print(f"Error vectorizing content: {str(e)}")
                 continue
         
         return vectors
 
-    def store_vectors(self, vectors: List[Dict]):
-        """Store vectors in Pinecone"""
-        if not vectors:
-            return
-            
+    async def query_vector_db(self, question: str, organization: str, top_k: int = 5) -> List[Dict]:
+        """Enhanced vector DB querying"""
         try:
-            # Upsert vectors in batches of 100
-            batch_size = 100
-            for i in range(0, len(vectors), batch_size):
-                batch = vectors[i:i + batch_size]
-                self.index.upsert(vectors=batch)
-        except Exception as e:
-            print(f"Error storing vectors: {str(e)}")
-            raise
-
-    def query_vector_db(self, question: str, organization: str, top_k: int = 3) -> List[Dict]:
-        """Query vector database for relevant content"""
-        try:
-            # Generate query embedding
-            query_text = f"Question: {question} Organization: {organization}"
-            query_embedding = self.openai_client.embeddings.create(
-                input=query_text,
-                model="text-embedding-ada-002"
-            ).data[0].embedding
+            query_text = f"Question about {organization}: {question}"
+            query_embedding = await self._get_embedding(query_text)
             
-            # Query Pinecone with metadata filtering
+            # Enhanced query with metadata filtering and scoring
             results = self.index.query(
                 vector=query_embedding,
                 filter={
-                    "question": {"$eq": question},
-                    "organization": {"$eq": organization}
+                    "organization": {"$eq": organization},
+                    "relevance_score": {"$gte": 0.5}  # Filter for relevant content
                 },
                 top_k=top_k,
                 include_metadata=True
             )
             
-            return results.matches
+            # Sort results by relevance and recency
+            sorted_results = sorted(
+                results.matches,
+                key=lambda x: (
+                    x.score,  # Vector similarity
+                    x.metadata.get('relevance_score', 0),  # Content relevance
+                    x.metadata.get('timestamp', '2000-01-01')  # Recency
+                ),
+                reverse=True
+            )
+            
+            return sorted_results
+            
         except Exception as e:
             print(f"Error querying vector database: {str(e)}")
             return []
 
-    def process_with_llm(self, query_results: List[Dict], question: str) -> Dict:
-        """Process retrieved content with LLM"""
+    async def process_with_llm(
+        self,
+        query_results: List[Dict],
+        question: str,
+        organization: str
+    ) -> Dict:
+        """Enhanced LLM processing"""
         try:
-            # Construct prompt with retrieved content
-            context = "\n\n".join([
-                f"Source {i+1}:\n{result.metadata['content']}"
+            # Prepare sources with metadata
+            sources_text = "\n\n".join([
+                f"Source {i+1} ({result.metadata.get('content_type', 'unknown')}, "
+                f"{result.metadata.get('timestamp', 'unknown date')}):\n"
+                f"{result.metadata['content']}"
                 for i, result in enumerate(query_results)
             ])
             
-            prompt = f"""Based on the following sources, answer the question: "{question}"
-            
-            {context}
-            
-            Provide your response in the following JSON format:
-            {{
-                "answer": "A comprehensive answer",
-                "key_findings": ["finding 1", "finding 2", ...],
-                "confidence_score": 0.0 to 1.0,
-                "sources": ["url1", "url2", ...]
-            }}"""
-            
-            # Get LLM response
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"}
+            # Construct prompt with enhanced template
+            prompt = self.ANALYSIS_PROMPT_TEMPLATE.format(
+                question=question,
+                organization=organization,
+                sources=sources_text
             )
             
-            return json.loads(response.choices[0].message.content)
+            # Get LLM response with structured output format
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4-1106-preview",  # Use a model that supports JSON output
+                messages=[
+                    {"role": "system", "content": "You are a financial analysis expert. Always respond in valid JSON format."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                response_format={"type": "json_object"}  # This will work with gpt-4-1106-preview
+            )
+            
+            # Parse the response
+            try:
+                result = json.loads(response.choices[0].message.content)
+                return result
+            except json.JSONDecodeError:
+                # Fallback for non-JSON responses
+                return {
+                    "answer": "Error: Invalid response format",
+                    "key_findings": [],
+                    "metrics": {},
+                    "confidence_score": 0.0,
+                    "reliability_assessment": {
+                        "source_quality": 0.0,
+                        "data_recency": "unknown",
+                        "data_completeness": 0.0
+                    },
+                    "sources": []
+                }
+                
         except Exception as e:
             print(f"Error processing with LLM: {str(e)}")
-            return {
-                "answer": "Error processing response",
-                "key_findings": [],
-                "confidence_score": 0.0,
-                "sources": []
-            }
+            raise
 
     async def process_data_matrix(
         self,
         questions: List[str],
         organizations: List[str],
-        search_results: List[SearchResult]
+        search_results: List[EnhancedSearchResult]
     ) -> pd.DataFrame:
-        """Process entire matrix of questions and organizations"""
+        """Enhanced matrix processing"""
         try:
-            # Vectorize and store all search results
-            vectors = self.vectorize_content(search_results)
+            # Vectorize and store results
+            vectors = await self.vectorize_content(search_results)
             if vectors:
-                self.store_vectors(vectors)
+                self.index.upsert(vectors=vectors)
             
-            # Process each question-organization pair
+            # Process each pair with enhanced error handling
             results = []
             for question in questions:
                 for org in organizations:
-                    # Query vector DB
-                    relevant_content = self.query_vector_db(question, org)
-                    
-                    # Process with LLM
-                    processed_result = self.process_with_llm(relevant_content, question)
-                    
-                    results.append(ProcessedResult(
-                        question=question,
-                        organization=org,
-                        answer=processed_result
-                    ))
+                    try:
+                        # Query vector DB
+                        relevant_content = await self.query_vector_db(question, org)
+                        
+                        if not relevant_content:
+                            raise ValueError(f"No relevant content found for {org} - {question}")
+                        
+                        # Process with LLM
+                        processed_result = await self.process_with_llm(
+                            relevant_content,
+                            question,
+                            org
+                        )
+                        
+                        # Create detailed row
+                        row = {
+                            'Question': question,
+                            'Organization': org,
+                            'Answer': processed_result['answer'],
+                            'Key Findings': '; '.join(processed_result['key_findings']),
+                            'Metrics': json.dumps(processed_result['metrics']),
+                            'Confidence': processed_result['confidence_score'],
+                            'Source Quality': processed_result['reliability_assessment']['source_quality'],
+                            'Data Recency': processed_result['reliability_assessment']['data_recency'],
+                            'Data Completeness': processed_result['reliability_assessment']['data_completeness'],
+                            'Sources': '; '.join(processed_result['sources'])
+                        }
+                        
+                        results.append(row)
+                        
+                    except Exception as e:
+                        # Add error row with details
+                        results.append({
+                            'Question': question,
+                            'Organization': org,
+                            'Answer': f"Error: {str(e)}",
+                            'Key Findings': '',
+                            'Metrics': '{}',
+                            'Confidence': 0.0,
+                            'Source Quality': 0.0,
+                            'Data Recency': 'unknown',
+                            'Data Completeness': 0.0,
+                            'Sources': ''
+                        })
             
-            # Convert results to DataFrame
-            df_data = []
-            for result in results:
-                row = {
-                    'Question': result.question,
-                    'Organization': result.organization,
-                    'Answer': result.answer['answer'],
-                    'Key Findings': '; '.join(result.answer['key_findings']),
-                    'Confidence': result.answer['confidence_score'],
-                    'Sources': '; '.join(result.answer['sources'])
-                }
-                df_data.append(row)
+            return pd.DataFrame(results)
             
-            return pd.DataFrame(df_data)
         except Exception as e:
             print(f"Error processing data matrix: {str(e)}")
             raise
