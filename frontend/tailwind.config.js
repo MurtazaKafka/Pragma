@@ -10,7 +10,10 @@ module.exports = {
           },
           colors: {
             heliotrope: {
-              50: '#ede1f0',
+              0: '#fdfafd',
+              25: '#faf5fb',
+              50: '#f4ebf6',
+              75: '#ede1f0',
               100: '#dec2e2',
               200: '#cfa4d5',
               300: '#c184ca',

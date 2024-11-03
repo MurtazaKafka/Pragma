@@ -12,12 +12,14 @@ const Landing = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100">
+        <div className="min-h-screen bg-gradient-to-b from-heliotrope-50 to-heliotrope-25">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="space-y-8">
                     <Header />
-                    <div className="max-w-3xl mx-auto">
-                        <QueryInput onSubmit={handleQuerySubmit} />
+                    <div className="flex justify-center">
+                        <div className="max-w-3xl mx-auto md:w-1/2">
+                            <QueryInput onSubmit={handleQuerySubmit} />
+                        </div>
                     </div>
                     {queryData && (
                         <div className="mt-8">
