@@ -1,7 +1,14 @@
 # Pragma
 
 ## Inspiration
-In today’s data collection standards, research organizations frequently rely on manual data collection methods, often hiring multiple data collectors to access reliable and scalable data. This approach is both financially burdensome and time-consuming, significantly slowing down the research process. Team Pragma was inspired to innovate in this space by creating a streamlined, automated pragmatic data collection tool that not only reduces costs and time but also enhances data reliability, particularly for fields like finance and education.
+In today’s data collection standards, research organizations frequently rely on manual data collection methods, often hiring multiple data collectors to access reliable and scalable data. This approach is both financially burdensome and time-consuming, significantly slowing down the research process. There have been attempts at automating this process by large language models, however the outputs that these models prvoide are not very reliable. Trying to solve this problem, we were able to create a maximally accurate automated data collector by grounding the outputs of large language models to the factual information scrapable from the internet. We have used Retrieval Augmented Generation in order to ground the data we can scrape from the web and create a similarity score between the data points that come as inputs and the organizations from which we try to collect data. This tool enables:
+
+- Precise similarity scoring between input queries and source organizations
+- Verification of data points against real-world sources
+- Reliable automation that maintains accuracy while reducing costs
+
+
+Our solution emerged from recognizing the urgent need for a pragmatic tool that could bridge the gap between manual reliability and automated efficiency, particularly in data-intensive fields like finance and education.
 
 ## What it does
 Pragma automates the data collection process by gathering accurate and relevant information from verified online sources. Users can log into their accounts, enter organizations or topics they wish to research, and specify the questions they want answered. Pragma then compiles these inputs into structured search queries, retrieves reliable content from the web, processes it, and presents the information in a user-friendly interface. The platform also stores data for users, ensuring continuity and ease of access in future sessions.
@@ -33,7 +40,7 @@ One of the key challenges was minimizing hallucinations that can arise with LLMs
 We’re proud to have created an automated data collection platform through a fully working RAG process from contextual web scraping and embeddings to retrieval and completions. Our successful integration of multiple APIs, including but not limited to Google Search API and OpenAI's Vector Embedding and Completion API, coupled with our robust data processing pipeline makes us proud.
 
 ## What we learned
-This project taught us the intricacies of handling real-time data retrieval and processing while maintaining accuracy. We gained valuable insights into embedding and querying techniques, web scraping challenges, and managing data storage for quick access. Additionally, we deepened our understanding of APIs like Google Search, Pinecone, and OpenAI’s suite, as well as the backend workflow required to manage large volumes of structured data.
+We gained valuable insights into how language can be represented as a set of relations of different vectors. We learnred techniques such as embedding and querying, web scraping, and managing data storage for quick access. Additionally, we deepened our understanding of APIs like Google Search, Pinecone, and OpenAI’s suite, as well as the backend workflow required to manage large volumes of structured data.
 
 ## What's next for Pragma
 Pragma’s next steps include refining our data validation processes and incorporating a human-in-the-loop review system for further accuracy. We aim to expand into more fields beyond finance and education, allowing for specialized data retrieval in healthcare, law, and other data-intensive industries. Furthermore, we plan to enhance our UI for seamless user interaction and explore additional vector database options to scale Pragma’s real-time search capabilities.
