@@ -54,7 +54,7 @@ function QueryInput() {
                     }}
                     onChange={handleQueryChange}
                     placeholder="What would you like to know?"
-                    className="flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
+                    className="text-heliotrope-600 flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
                     aria-label="Enter Query"
                     rows={3}
                 />
@@ -68,7 +68,7 @@ function QueryInput() {
             type="text"
             onChange={handleOrganisationsChange}
             placeholder="Search Organisations (comma-separated)"
-            className="flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
+            className="text-heliotrope-600 flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
             aria-label="Enter Organisations"
             style={{resize: 'none'}}
         />
