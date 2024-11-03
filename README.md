@@ -44,7 +44,17 @@ We’re proud to have created an automated data collection platform through a fu
 We gained valuable insights into how language can be represented as a set of relations of different vectors. We learnred techniques such as embedding and querying, web scraping, and managing data storage for quick access. Additionally, we deepened our understanding of APIs like Google Search, Pinecone, and OpenAI’s suite, as well as the backend workflow required to manage large volumes of structured data.
 
 ## What's next for Pragma
-Pragma’s next steps include refining our data validation processes and incorporating a human-in-the-loop review system for further accuracy. We aim to expand into more fields beyond finance and education, allowing for specialized data retrieval in healthcare, law, and other data-intensive industries. Furthermore, we plan to enhance our UI for seamless user interaction and explore additional vector database options to scale Pragma’s real-time search capabilities.
+Our next steps include refining our data validation processes by including an option to embed a human-in-the-loop review system for further accuracy. Right now, the model is prompt engineered to provide accurate and reliable information for education and finance, we aim to expand into more fields like healthcare, law, and other data-intesive industries. In addition to that, we want to incorporate the option to download multiple types file extensions beyond csv, like JSON, plain text, excel, and more.
+
+## Acknowledgement 
+We acknowledge the use of ChatGPT (GPT-3.5/4) in the following aspects of our project development:
+
+
+- Generating documentation templates
+- Assisting in code design and structure
+- Troubleshooting coding errors
+- Suggesting fixes for integration issues
+- Identifying logical flaws in algorithms
 
 
 ## Our Team
