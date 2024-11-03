@@ -37,7 +37,7 @@ function QueryInput({ onSubmit }) {
     const closeModal = () => setIsModalOpen(false);
 
     return (
-        <div className="w-full md:w-full bg-white rounded-xl shadow-lg p-6">
+        <div className="w-full md:w-full bg-heliotrope-25 rounded-xl shadow-lg p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                     <label 
@@ -52,7 +52,7 @@ function QueryInput({ onSubmit }) {
                             value={query}
                             onChange={handleQueryChange}
                             placeholder="What would you like to know? (newline-separated questions)"
-                            className="font-bodoni resize-none w-full min-h-[120px] p-4 text-heliotrope-800 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ease-in-out"
+                            className="font-bodoni resize-none w-full min-h-[120px] p-4 text-heliotrope-800 border border-gray-200 rounded-lg bg-heliotrope-0 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ease-in-out"
                             rows={3}
                         />
                     </div>
@@ -71,7 +71,7 @@ function QueryInput({ onSubmit }) {
                             value={organisations}
                             onChange={handleOrganisationsChange}
                             placeholder="Enter organizations (comma-separated)"
-                            className="font-bodoni w-full p-4 text-heliotrope-800 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out resize-none"
+                            className="font-bodoni w-full p-4 text-heliotrope-800 border border-gray-200 rounded-lg bg-heliotrope-0 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ease-in-out resize-none"
                             rows={2}
                         />
                     </div>
