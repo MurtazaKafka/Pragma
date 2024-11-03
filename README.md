@@ -7,6 +7,7 @@
   - Retrieving data relevant to input questions and organizations
   - Structuring retrieved data in a parsable format (JSON)
   - Converting JSON file to CSV file
+  - Preferably convert CSV to plain text
 - Frontend:
   - Landing Page:
     - 1st text input (research questions; rows)
