@@ -65,7 +65,7 @@ def answer_question(pages_contents, question):
             {"role": "system", 
              "content": "You are a data collector. You will be given 3 websites and their contents. Based on these content, you are prompted to answer the question you are given for data collection purposes."}, 
             {"role": "user", "content": pages_contents + 
-             f"Based on this information, give me the answer to this questions: {question}"},
+             f"Based on this information, give me the answer to this questions: {question}. I want your completion to be concise and definite. Give me colon separated values like, <question>: <retrieved respnonse>."},
         ]
     )
 

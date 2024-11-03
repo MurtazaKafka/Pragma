@@ -31,6 +31,11 @@ function QueryInput({ onSubmit }) {
         });
     };
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
+
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
