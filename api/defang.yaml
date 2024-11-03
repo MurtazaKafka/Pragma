@@ -1,0 +1,22 @@
+name: pdf-to-searchable
+runtime: python3.9
+build:
+  - pip install -r requirements.txt
+services:
+  - name: nginx
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+  - name: pdf-to-searchable
+    file: main.py
+    entrypoint: app
+  - name: pdf-to-searchable-text
+    file: main.py
+    entrypoint: app
+    http:
+      path: /api/analyze
+      method: get
+    depends_on:
+      - nginx
