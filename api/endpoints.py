@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List
 import logging
 from scraper import WebScraper
-from rag_processor import RAGProcessor
+from rag_processor import EnhancedRAGProcessor
 from schemas import QueryRequest
 
 # Configure logging
@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
 
 @app.post("/api/analyze")
 async def analyze_data(request: QueryRequest):
@@ -26,12 +27,12 @@ async def analyze_data(request: QueryRequest):
         
         # Initialize services
         scraper = WebScraper()
-        rag = RAGProcessor()
+        rag = EnhancedRAGProcessor()
         
         # Get search results
         try:
             search_results = await scraper.scrape_matrix(
-                request.questions, 
+                request.questions,
                 request.organizations
             )
             logger.info(f"Successfully scraped {len(search_results)} results")
@@ -48,7 +49,7 @@ async def analyze_data(request: QueryRequest):
             results_df = await rag.process_data_matrix(
                 request.questions,
                 request.organizations,
-                search_results
+                search_results  # Pass the search_results here
             )
             logger.info("Successfully processed data with RAG")
             

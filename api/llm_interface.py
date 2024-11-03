@@ -14,7 +14,7 @@ class LLMInterface:
         self.logger = logging.getLogger(__name__)
         
         # Configure default parameters
-        self.default_model = "gpt-4"
+        self.default_model = "gpt-4-1106-preview"
         self.max_tokens = 1000
         self.temperature = 0.3
         
