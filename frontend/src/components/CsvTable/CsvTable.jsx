@@ -65,10 +65,10 @@ const CsvTable = () => {
     }, []);
 
     return (
-        <div id="csv-wrapper">
+        <div id="csv-wrapper" className='border-2 border-heliotrope-400 rounded-xl'>
             {tableData.length > 0 ? (
-                <table>
-                    <thead>
+                <table className='border-collapse'>
+                    <thead className='bg-heliotrope-300 border-b border-r border-heliotrope-400'>
                         <tr>
                             {headers.map((header) => (
                                 <th key={header}>{header}</th>
@@ -79,7 +79,7 @@ const CsvTable = () => {
                         {tableData.map((row, index) => (
                             <tr key={index}>
                                 {headers.map((header) => (
-                                    <td key={header}>{row[header]}</td>
+                                    <td className="bg-white border-b border-r border-heliotrope-400" key={header}>{row[header]}</td>
                                 ))}
                             </tr>
                         ))}
