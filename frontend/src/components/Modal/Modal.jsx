@@ -1,5 +1,6 @@
 import React from "react";
 import CsvTable from "../CsvTable/CsvTable";
+import { handleDownload } from '../CsvTable/CsvTable';
 import './Modal.css';
 
 const Modal = ({ isOpen, onClose, children }) => {
@@ -8,7 +9,10 @@ const Modal = ({ isOpen, onClose, children }) => {
     return (
        <div className="modal-overlay" onClick={onClose}>
          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-           <button className="close-button" onClick={onClose}>
+            <button className="close-button" onClick={onClose}>
+              <i className="fa fa-times"></i>
+            </button>
+            <button className="download-button" onClick={handleDownload}>
               <i className="fa fa-download"></i>
             </button>
            <CsvTable/>

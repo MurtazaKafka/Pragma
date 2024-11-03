@@ -32,7 +32,6 @@ function QueryInput() {
         className="flex flex-wrap gap-5 justify-center items-center px-3.5 text-lg text-black rounded-lg w-4/5 md:w-2/3"
         onSubmit={handleSubmit}>
         <label htmlFor="queryInput" className="sr-only">Enter Query</label>
-
                 <div className="relative w-full">
                     {query && (
                         <button
@@ -53,7 +52,7 @@ function QueryInput() {
                         height: 'auto',  // Allow the height to be dynamic
                         resize: 'none',
                     }}
-                    onChange={handleChange}
+                    onChange={handleQueryChange}
                     placeholder="What would you like to know?"
                     className="flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
                     aria-label="Enter Query"
@@ -71,8 +70,10 @@ function QueryInput() {
             placeholder="Search Organisations (comma-separated)"
             className="flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
             aria-label="Enter Organisations"
+            style={{resize: 'none'}}
         />
     </form>
+    <Modal isOpen={isModalOpen} onClose={closeModal}></Modal>
         </>
     );
 }
