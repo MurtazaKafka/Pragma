@@ -55,7 +55,7 @@ function QueryInput() {
                         borderRadius: "1rem",
                     }}
                     onChange={handleQueryChange}
-                    placeholder="What would you like to know?"
+                    placeholder="What would you like to know? Type each query on a new line."
                     className="text-base font-bodoni placeholder-heliotrope-300 text-heliotrope-600 flex-grow p-2 pl-3 pr-3 h-fit border border-gray-300
                     rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
                     aria-label="Enter Query"
@@ -70,7 +70,7 @@ function QueryInput() {
             id="queryInput"
             type="text"
             onChange={handleOrganisationsChange}
-            placeholder="Search Organisations (comma-separated)"
+            placeholder="Enter organizations, separated by commas."
             className="text-base font-bodoni placeholder-font-bodoni placeholder-heliotrope-300 text-heliotrope-600 pl-3 pr-3 flex-grow p-2 h-fit border border-gray-300 rounded-md transition duration-500 hover:outline-none focus:outline-none hover:shadow-md"
             aria-label="Enter Organisations"
             style={{
