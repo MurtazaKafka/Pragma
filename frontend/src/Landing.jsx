@@ -1,24 +1,33 @@
 import React, { useState } from 'react';
-import ReactDOM from "react-dom";
 import QueryInput from "./components/QueryInput";
 import Header from "./components/Header";
 import RecentChats from "./components/RecentChats";
-import Modal from "./components/Modal/Modal"
+import CSVViewer from './components/CSVViewer';
 
 const Landing = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [queryData, setQueryData] = useState(null);
 
-    const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
+    const handleQuerySubmit = async (data) => {
+        setQueryData(data);
+    };
 
     return (
-        <div>
-            <div className="font-inria-serif flex overflow-hidden flex-col items-center px-20 pt-24 pb-28 bg-heliotrope-50 max-md:px-5 max-md:py-24 h-screen">
-                <div className="flex flex-col justify-center items-center w-full gap-5">
-                    <Header/>
-                    <QueryInput/>
-                    <RecentChats />
-                </div> 
+        <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="space-y-8">
+                    <Header />
+                    <div className="max-w-3xl mx-auto">
+                        <QueryInput onSubmit={handleQuerySubmit} />
+                    </div>
+                    {queryData && (
+                        <div className="mt-8">
+                            <CSVViewer initialData={queryData} />
+                        </div>
+                    )}
+                    <div className="mt-8">
+                        <RecentChats />
+                    </div>
+                </div>
             </div>
         </div>
     );
