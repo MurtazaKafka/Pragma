@@ -7,6 +7,7 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType, 
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
 # Start a Spark session
 spark = spark = SparkSession.builder \
     .appName("CustomerTransactionAnalysis") \
@@ -98,3 +99,13 @@ plt.show()
 
 # Stop the Spark session
 spark.stop()
+
+
+from langchain_databricks import ChatDatabricks
+
+chat_model = ChatDatabricks(
+    endpoint="databricks-meta-llama-3-1-70b-instruct",
+    temperature=0.1,
+    max_tokens=250,
+)
+chat_model.invoke("How to use Databricks?")
