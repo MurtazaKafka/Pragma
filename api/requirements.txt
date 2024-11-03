@@ -8,3 +8,4 @@ openai
 tenacity
 pinecone
 pydantic
+dotenv
