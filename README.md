@@ -17,14 +17,15 @@ Pragma’s frontend is built on React and Tailwind while backend utilizes a Node
 Apart from the code, we have utilized tools like Figma, Terraform, or certain Databricks services to ensure the functionality of our UX and DevOps. 
 
 ### Sponsor Product Integrations
-- **Databricks:**: We have fully utilized Databricks to support RAG process with multiple LLM functions. 
+- **Databricks:**: We have fully utilized Databricks to support RAG process with multiple LLM functions. Here's what Databricks, their services and resources helped us build our AI application:
   - Cleaning data and creating a vector database for retrieval
+  - PySpark to clean and format the structured data 
   - Databricks Jumpstart Package
   - Setting up the AI Gateway
   - Using ChatDataBricks for completion after retrieval for generating a response for the user 
 - **MongoDB Atlas:** We used MongoDB in a few ways in our project. Firstly, we set a up a cluster and two collections in our remote Atlas directory. We utilized MongoDB along with JWT for user authentication. Additionally, we used MongoDB's efficiency querying and storage for saving large amounts of data that is being fetched on the frontend. Due to being able to store this large amount of data on MongoDB, we provide our users an option to view and go back to their old data collections. 
 - **Terraform:** Due to having multiple components of our application ─ frontend React app, backend Express app, two FastAPI apps ─ we had to run multiple tests for our deployments which was possible through Terraform. 
-- **.Tech Domains:** Since pragma.tech was taken, we decided to take [getpragma.tech](getpragma.tech) which fits our slogan Get Pragmatic, Get Data.
+- **.Tech Domains:** Since pragma.tech was taken, we decided to take [getpragma.tech](https://www.getpragma.tech) which fits our slogan Get Pragmatic, Get Data.
 
 ## Challenges we ran into
 One of the key challenges was minimizing hallucinations that can arise with LLMs, especially when working with niche data fields. Additionally, managing the accuracy and structuring of web-scraped content required extensive testing and validation. Implementing a reliable vector database and efficiently querying it to support real-time data requests was also technically challenging, as was ensuring scalability and performance across various API integrations.
